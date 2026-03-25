@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
-//================================ IMPORTS ============
+// ================================ IMPORTS ============
 
+use Database\Factories\UsuariFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-//================================ CLASSE ============
+// ================================ CLASSE ============
 
 /**
  * Model Eloquent per a la taula `usuaris`.
@@ -17,7 +19,9 @@ use Illuminate\Notifications\Notifiable;
  */
 class Usuari extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UsuariFactory> */
+    /** @use HasFactory<UsuariFactory> */
+    use HasApiTokens;
+
     use HasFactory;
     use Notifiable;
 
@@ -40,7 +44,7 @@ class Usuari extends Authenticatable
      */
     public const UPDATED_AT = null;
 
-    //================================ PROPIETATS ============
+    // ================================ PROPIETATS ============
 
     /**
      * Camps assignables en massa.
@@ -63,7 +67,7 @@ class Usuari extends Authenticatable
         'contrasenya',
     ];
 
-    //================================ MÈTODES PÚBLICS ============
+    // ================================ MÈTODES PÚBLICS ============
 
     /**
      * Retorna el nom de la columna de contrasenya per a l’autenticació Laravel.
@@ -97,7 +101,7 @@ class Usuari extends Authenticatable
         return $this->hasMany(Seient::class, 'retingut_per_usuari_id');
     }
 
-    //================================ CASTS ============
+    // ================================ CASTS ============
 
     /**
      * Conversió de tipus d’atributs.

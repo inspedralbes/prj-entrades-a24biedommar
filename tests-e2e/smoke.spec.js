@@ -10,7 +10,7 @@ test('Smoke Test: El sistema ha de carregar correctament', async ({ page }) => {
 });
 
 test('API Health Check: Laravel ha de respondre', async ({ request }) => {
-    const response = await request.get('http://localhost:8000/api/user');
-    // Hauria de retornar 401 (unauthorized) però vol dir que l'API és viva
+    // Ruta protegida sense Bearer: 401 (API viva; alineat amb S1.2 GET /api/usuari)
+    const response = await request.get('/api/usuari');
     expect(response.status()).toBe(401);
 });

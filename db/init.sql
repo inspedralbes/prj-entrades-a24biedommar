@@ -10,6 +10,8 @@ DROP TABLE IF EXISTS comandes CASCADE;
 DROP TABLE IF EXISTS seients CASCADE;
 DROP TABLE IF EXISTS zones_de_seient CASCADE;
 DROP TABLE IF EXISTS esdeveniments CASCADE;
+-- Tokens Sanctum (morph cap a usuaris; cal eliminar abans de usuaris si hi hagués FK lògica)
+DROP TABLE IF EXISTS personal_access_tokens CASCADE;
 DROP TABLE IF EXISTS usuaris CASCADE;
 
 DROP TYPE IF EXISTS estat_comanda CASCADE;
@@ -38,6 +40,28 @@ CREATE TABLE usuaris (
     creat_el TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT uq_usuaris_correu UNIQUE (correu_electronic)
 );
+
+-- -----------------------------------------------------------------------------
+-- personal_access_tokens (Laravel Sanctum)
+-- Propòsit: tokens d’API Bearer (hash SHA-256) vinculats polimòrficament a `Usuari`.
+-- No s’usa migració Laravel; esquema alineat amb Sanctum 4.x.
+-- -----------------------------------------------------------------------------
+CREATE TABLE personal_access_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    tokenable_type VARCHAR(255) NOT NULL,
+    tokenable_id BIGINT NOT NULL,
+    name TEXT NOT NULL,
+    token VARCHAR(64) NOT NULL,
+    abilities TEXT,
+    last_used_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ,
+    CONSTRAINT uq_personal_access_tokens_token UNIQUE (token)
+);
+
+CREATE INDEX idx_personal_access_tokens_tokenable ON personal_access_tokens (tokenable_type, tokenable_id);
+CREATE INDEX idx_personal_access_tokens_expires_at ON personal_access_tokens (expires_at);
 
 -- -----------------------------------------------------------------------------
 -- esdeveniments
