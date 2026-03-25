@@ -1,0 +1,112 @@
+services:
+  # 🎞️ FRONTEND: Nuxt 4 (Vue 3.5 + Pinia 3)
+  front_nuxt:
+    container_name: front_nuxt
+    build:
+      context: ./frontend
+      dockerfile: ../docker/node/Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - node_modules_front:/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NUXT_PUBLIC_API_URL=http://localhost:8000
+      - NUXT_PUBLIC_SOCKET_URL=http://localhost:3001
+    depends_on:
+      - back_laravel
+      - back_node_io
+    networks:
+      - tr3_network
+
+  # 🐘 BACKEND API: Laravel 13 (PHP-FPM 8.3)
+  back_laravel:
+    container_name: back_laravel
+    build:
+      context: ./backend-api
+      dockerfile: ../docker/php/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend-api:/var/www/html
+    environment:
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db_postgres
+      - DB_PORT=5432
+      - DB_DATABASE=ticketmaster
+      - DB_USERNAME=user
+      - DB_PASSWORD=pass
+      - REDIS_HOST=cache_redis
+    depends_on:
+      - db_postgres
+      - cache_redis
+    networks:
+      - tr3_network
+
+  # 🟢 REAL-TIME GATEWAY: Node.js 24 (Socket.IO 4.8)
+  back_node_io:
+    container_name: back_node_io
+    build:
+      context: ./backend-realtime
+      dockerfile: ../docker/node/Dockerfile
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend-realtime:/app
+      - node_modules_back:/app/node_modules
+    environment:
+      - REDIS_HOST=cache_redis
+      - PORT=3001
+    depends_on:
+      - cache_redis
+    networks:
+      - tr3_network
+
+  # 🗄️ DATABASE: PostgreSQL 18.3
+  db_postgres:
+    container_name: db_postgres
+    image: postgres:18-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=ticketmaster
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/10-init.sql
+      - ./db/insert.sql:/docker-entrypoint-initdb.d/20-insert.sql
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - tr3_network
+
+  # ⚡ CACHE & BUS: Redis 8.6 (using current 7-alpine as 8.6 is very fresh/preview)
+  cache_redis:
+    container_name: cache_redis
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - tr3_network
+
+  # 🐘 ADMINER: Gestor de bases de dades
+  adminer:
+    container_name: adminer
+    image: adminer:latest
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - tr3_network
+    depends_on:
+      - db_postgres
+
+networks:
+  tr3_network:
+    driver: bridge
+
+volumes:
+  pgdata:
+  node_modules_front:
+  node_modules_back:
