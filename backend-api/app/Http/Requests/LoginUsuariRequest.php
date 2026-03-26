@@ -31,6 +31,7 @@ class LoginUsuariRequest extends FormRequest
         return [
             'correu_electronic' => ['required', 'string', 'email:rfc', 'max:150'],
             'contrasenya' => ['required', 'string'],
+            'return_to' => ['nullable', 'string', 'max:2048'],
         ];
     }
 
@@ -44,6 +45,7 @@ class LoginUsuariRequest extends FormRequest
         return [
             'correu_electronic.required' => 'El correu electrònic és obligatori.',
             'contrasenya.required' => 'La contrasenya és obligatòria.',
+            'return_to.max' => 'La ruta de retorn és massa llarga.',
         ];
     }
 }

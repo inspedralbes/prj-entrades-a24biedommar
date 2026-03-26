@@ -7,6 +7,7 @@ use App\Http\Requests\LoginUsuariRequest;
 use App\Http\Requests\RegisterUsuariRequest;
 use App\Http\Resources\UsuariResource;
 use App\Models\Usuari;
+use App\Support\ReturnToResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -18,6 +19,20 @@ use Illuminate\Support\Facades\Hash;
  */
 class AuthController extends Controller
 {
+    // ================================ PROPIETATS ============
+
+    /**
+     * Resolutor de `return_to` segur per evitar open-redirect.
+     */
+    private ReturnToResolver $returnToResolver;
+
+    // ================================ CONSTRUCTOR ============
+
+    public function __construct(ReturnToResolver $returnToResolver)
+    {
+        $this->returnToResolver = $returnToResolver;
+    }
+
     // ================================ MÈTODES PÚBLICS ============
 
     /**
@@ -75,11 +90,13 @@ class AuthController extends Controller
         // C. Token Sanctum.
         $nomToken = 'api-auth';
         $token = $usuari->createToken($nomToken)->plainTextToken;
+        $returnToResolta = $this->returnToResolver->resolve($dades['return_to'] ?? null);
 
         return response()->json([
             'missatge' => 'Sessió iniciada.',
             'token' => $token,
             'usuari' => new UsuariResource($usuari),
+            'return_to_resolta' => $returnToResolta,
         ], 200);
     }
 

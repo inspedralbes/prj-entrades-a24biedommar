@@ -13,7 +13,7 @@
 |----|-------|-------|------------|------------|
 | S1.1 | Configurar models Laravel (User, Event, Seat, Ticket, SeatZone) | Backend | Laravel 13 | ✅ **Implementat** (rama `Tasca1-Models`) — Crear models manuals a app/Models/ per interactuar amb PostgreSQL |
 | S1.2 | Implementar Controlador d'Autenticació (Register, Login, Logout) | Backend | Laravel 13 + Sanctum | ✅ **Implementat** — API REST (`/api/register`, `/api/login`, `/api/logout`, `/api/usuari`) amb Sanctum Bearer; pla [2TascaPlan(auth-api).md](Plans/2TascaPlan(auth-api).md) |
-| S1.3 | Crear Middleware de Protecció de Rutes | Backend | Laravel 13 | auth:sanctum, role check (admin/client) |
+| S1.3 | Crear Middleware de Protecció de Rutes | Backend | Laravel 13 | ✅ **Implementat** — `auth:sanctum`, control d'accés per rol (`admin`/`client`) |
 
 ### Dia 2: Autenticació Frontend + Redireccions
 
