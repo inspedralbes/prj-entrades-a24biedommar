@@ -10,9 +10,9 @@
 -- -----------------------------------------------------------------------------
 INSERT INTO usuaris (nom, correu_electronic, contrasenya, rol, creat_el)
 VALUES
-    ('Administrador Principal', 'admin@tr3.daw', 'pbkdf2:sha256:600000$p6G6...', 'admin', NOW() - INTERVAL '30 days'),
-    ('Laia Ferrer', 'laia.ferrer@exemple.cat', 'pbkdf2:sha256:600000$p6G6...', 'client', NOW() - INTERVAL '10 days'),
-    ('Marc Puig', 'marc.puig@exemple.cat', 'pbkdf2:sha256:600000$p6G6...', 'client', NOW() - INTERVAL '5 days');
+    ('Administrador Principal', 'admin@tr3.daw', '$2y$10$xtBJ.oY8SZUXqoJcVZrkoumk5cMecuXAuzTOYLEvpMOrOec3o4eKm', 'admin', NOW() - INTERVAL '30 days'),
+    ('Laia Ferrer', 'laia.ferrer@exemple.cat', '$2y$10$xtBJ.oY8SZUXqoJcVZrkoumk5cMecuXAuzTOYLEvpMOrOec3o4eKm', 'client', NOW() - INTERVAL '10 days'),
+    ('Marc Puig', 'marc.puig@exemple.cat', '$2y$10$xtBJ.oY8SZUXqoJcVZrkoumk5cMecuXAuzTOYLEvpMOrOec3o4eKm', 'client', NOW() - INTERVAL '5 days');
 
 -- -----------------------------------------------------------------------------
 -- esdeveniments
