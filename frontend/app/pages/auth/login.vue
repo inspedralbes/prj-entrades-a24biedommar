@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 const authStore = useAuthStore();
 
 const correu = ref('');
@@ -26,7 +26,7 @@ async function handleLogin() {
         useCookie('return_to').value = null;
         
         await router.push(redirectUrl);
-    } catch (err: any) {
+    } catch (err) {
         error.value = err.data?.missatge || 'Credencials incorrectes';
     } finally {
         loading.value = false;

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 const authStore = useAuthStore();
 
 const nom = ref('');
@@ -40,7 +40,7 @@ async function handleRegister() {
         setTimeout(() => {
             router.push('/login');
         }, 2000);
-    } catch (err: any) {
+    } catch (err) {
         error.value = err.data?.missatge || 'Error en el registre';
     } finally {
         loading.value = false;
