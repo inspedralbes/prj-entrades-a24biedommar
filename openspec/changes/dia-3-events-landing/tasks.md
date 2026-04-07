@@ -15,12 +15,12 @@
 
 ## 3. Backend - Favorites System (S1.9)
 
-- [ ] 3.1 Crear Model Favorite a backend-api/app/Models/
-- [ ] 3.2 Crear FavoriteController a backend-api/app/Http/Controllers/
-- [ ] 3.3 Implementar mètode addFavorite() per guardar favorits a PostgreSQL
-- [ ] 3.4 Implementar mètode removeFavorite() per eliminar favorits
-- [ ] 3.5 Implementar mètode listFavorites() per llistar favorits de l'usuari
-- [ ] 3.6 Afegir rutes API /api/favorites a routes/api.php
+- [x] 3.1 Crear Model Favorite a backend-api/app/Models/
+- [x] 3.2 Crear FavoriteController a backend-api/app/Http/Controllers/
+- [x] 3.3 Implementar mètode addFavorite() per guardar favorits a PostgreSQL
+- [x] 3.4 Implementar mètode removeFavorite() per eliminar favorits
+- [x] 3.5 Implementar mètode listFavorites() per llistar favorits de l'usuari
+- [x] 3.6 Afegir rutes API /api/favorites a routes/api.php
 
 ## 4. Frontend - Events Store (S1.10)
 

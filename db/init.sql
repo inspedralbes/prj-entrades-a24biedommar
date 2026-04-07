@@ -5,6 +5,7 @@
 -- =============================================================================
 
 -- Neteja idempotent per a entorns de desenvolupament (executar abans de recrear)
+DROP TABLE IF EXISTS favorits CASCADE;
 DROP TABLE IF EXISTS tiquets CASCADE;
 DROP TABLE IF EXISTS comandes CASCADE;
 DROP TABLE IF EXISTS seients CASCADE;
@@ -144,6 +145,22 @@ CREATE TABLE tiquets (
     CONSTRAINT uq_tiquets_hash_qr UNIQUE (hash_qr)
 );
 
+-- -----------------------------------------------------------------------------
+-- favorits
+-- Propòsit: esdeveniments guardats per l'usuari (Ticketmaster)
+-- Relacions: FK a usuaris
+-- -----------------------------------------------------------------------------
+CREATE TABLE favorits (
+    id SERIAL PRIMARY KEY,
+    usuari_id INTEGER NOT NULL REFERENCES usuaris (id) ON DELETE CASCADE,
+    event_id VARCHAR(255) NOT NULL,
+    event_nom VARCHAR(255) NOT NULL,
+    event_data VARCHAR(255),
+    event_imatge TEXT,
+    creat_el TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_favorits_usuari_event UNIQUE (usuari_id, event_id)
+);
+
 -- =============================================================================
 -- RESTRICCIONS / CLAUS ESTRANGERES (FK)
 -- =============================================================================
@@ -160,3 +177,4 @@ CREATE INDEX idx_seients_estat ON seients (estat);
 CREATE INDEX idx_comandes_usuari ON comandes (usuari_id);
 CREATE INDEX idx_comandes_creat ON comandes (creat_el);
 CREATE INDEX idx_tiquets_comanda ON tiquets (comanda_id);
+CREATE INDEX idx_favorits_usuari ON favorits (usuari_id);

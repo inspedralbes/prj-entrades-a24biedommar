@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\ReturnToController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\FavoritController;
 use Illuminate\Support\Facades\Route;
 
 // ================================ RUTES API REST (prefix /api) ============
@@ -21,6 +22,12 @@ Route::get('/return-to/get', [ReturnToController::class, 'get']);
 Route::post('/return-to/clear', [ReturnToController::class, 'clear']);
 
 // ——— Rutes protegides ———
+Route::middleware('auth:sanctum')->group(function () {
+    // ——— Favorits ———
+    Route::get('/favorites', [FavoritController::class, 'index']);
+    Route::post('/favorites', [FavoritController::class, 'store']);
+    Route::delete('/favorites/{eventId}', [FavoritController::class, 'destroy']);
+});
 
 // ——— Rutes exclusives per a administradors ———
 Route::middleware(['auth:sanctum', 'rol:admin'])->group(function () {
