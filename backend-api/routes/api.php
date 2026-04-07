@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\ReturnToController;
+use App\Http\Controllers\EventController;
 use Illuminate\Support\Facades\Route;
 
 // ================================ RUTES API REST (prefix /api) ============
@@ -9,6 +10,10 @@ use Illuminate\Support\Facades\Route;
 // ——— Rutes públiques ———
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+
+// ——— Events (Ticketmaster) ———
+Route::get('/events', [EventController::class, 'index']);
+Route::get('/events/{id}', [EventController::class, 'show']);
 
 // ——— Return-to redirect ———
 Route::post('/return-to/save', [ReturnToController::class, 'save']);

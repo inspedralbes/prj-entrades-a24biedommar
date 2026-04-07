@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'ticketmaster' => [
+        'key' => env('TICKETMASTER_API_KEY'),
+    ],
+
 ];
