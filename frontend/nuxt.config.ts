@@ -28,6 +28,7 @@ export default defineNuxtConfig({
         public: {
             apiUrl: process.env.NUXT_PUBLIC_API_URL || 'http://localhost:8000',
             socketUrl: process.env.NUXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+            gatekeeperUrl: process.env.NUXT_PUBLIC_GATEKEEPER_URL || 'http://localhost:3001',
         }
     },
 
