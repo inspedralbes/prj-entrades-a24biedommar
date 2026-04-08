@@ -1,55 +1,68 @@
 import { useAuthStore } from '~/stores/auth';
 
 /**
- * Rutes publics que no requereixen autenticacio.
+ * Rutes públiques (sense autenticació obligatòria).
  */
-const rutesPubliques = ['/', '/login', '/register', '/events'];
+const rutesPubliquesPrefixes = ['/', '/auth/login', '/auth/register', '/events'];
 
 /**
- * Rutes protegides que requereixen autenticacio.
+ * Prefixos de rutes protegides.
  */
-const rutesProtegides = ['/checkout', '/profile', '/tickets', '/waiting-room'];
+const prefixosProtegits = ['/waiting-room', '/checkout', '/profile', '/tickets', '/seients'];
+
+/**
+ * Comprova si la ruta és pública.
+ */
+function esRutaPublica(path) {
+    if (path === '/') {
+        return true;
+    }
+    return rutesPubliquesPrefixes.some((p) => {
+        if (p === '/') {
+            return false;
+        }
+        return path === p || path.startsWith(`${p}/`);
+    });
+}
+
+/**
+ * Comprova si cal autenticació per accedir a la ruta.
+ */
+function esRutaProtegida(path) {
+    return prefixosProtegits.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+}
 
 /**
  * Middleware global d'autenticacio per protegir rutes.
- * A. Inicialitza l'estat d'autenticacio si no esta fet.
- * B. Redirigeix usuaris autenticats que intenten accedir a /login o /register.
- * C. Redirigeix usuaris no autenticats que intenten accedir a rutes protegides.
- * D. Guarda la URL actual per retornar desprès del login.
+ * A. Inicialitza l'estat d'autenticacio al client.
+ * B. Redirigeix usuaris autenticats que intenten accedir a login/register cap a la landing.
+ * C. Guarda return_to i redirigeix a login si la ruta és protegida.
  */
-export default defineNuxtRouteMiddleware(async (to, from) => {
+export default defineNuxtRouteMiddleware(async (to) => {
     const authStore = useAuthStore();
-    const router = useRouter();
 
-    // A. Inicialitzar estat d'autenticacio si esta al client
-    if (process.client && !authStore.estaAutenticatInicialitzat) {
+    if (process.client) {
         await authStore.initAuth();
     }
 
-    const estaAutenticat = authStore.estaAutenticat;
-    const esRutaPublica = rutesPubliques.includes(to.path);
-    const esRutaProtegida = rutesProtegides.includes(to.path);
-    const esRutaAuth = to.path === '/login' || to.path === '/register';
+    const estaAutenticat = authStore.estat.estaAutenticat;
+    const esAuth = to.path === '/auth/login' || to.path === '/auth/register';
+    const protegida = esRutaProtegida(to.path);
+    const publica = esRutaPublica(to.path);
 
-    // B. Usuari autenticat intenta accedir a rutes d'autenticacio -> Landing
-    if (estaAutenticat && esRutaAuth) {
-        return router.push('/');
+    if (estaAutenticat && esAuth) {
+        return navigateTo('/');
     }
 
-    // C. Usuari no autenticat intenta accedir a ruta protegida -> Login
-    if (!estaAutenticat && esRutaProtegida) {
-        const returnTo = to.fullPath;
-        const cookieReturnTo = useCookie('return_to', { maxAge: 60 * 5 });
-        cookieReturnTo.value = returnTo;
-
-        return router.push('/login');
+    if (!estaAutenticat && protegida) {
+        const cookieReturnTo = useCookie('return_to', { maxAge: 60 * 30, path: '/' });
+        cookieReturnTo.value = to.fullPath;
+        return navigateTo('/auth/login');
     }
 
-    // D. Usuari autenticat accedeix a ruta protegida -> Permetre
-    if (estaAutenticat && esRutaProtegida) {
+    if (!estaAutenticat && !publica && !protegida) {
         return;
     }
 
-    // E. Rutes publiques -> Permetre
     return;
 });

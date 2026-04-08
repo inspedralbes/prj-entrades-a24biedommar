@@ -20,11 +20,11 @@ const { validarTokenHandshake, validarToken } = require('../middleware/authMiddl
  */
 function inicialitzarHandlersCua(io) {
     // A. Handler de connexió
-    io.on('connection', (socket) => {
+    io.on('connection', async (socket) => {
         console.log(`🔌 Usuari connectat: ${socket.id}`);
         
-        // B. Validar token d'autenticació
-        const auth = validarTokenHandshake(socket);
+        // B. Validar token d'autenticació (Sanctum via Laravel o JWT)
+        const auth = await validarTokenHandshake(socket);
         
         if (!auth.valid) {
             console.log(`❌ Connexió rebutjada per a ${socket.id}: ${auth.error}`);

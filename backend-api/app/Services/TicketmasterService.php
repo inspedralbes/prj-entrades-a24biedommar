@@ -33,7 +33,11 @@ class TicketmasterService
      */
     public function __construct()
     {
-        $this->apiKey = config('services.ticketmaster.key', env('TICKETMASTER_API_KEY', ''));
+        $clau = config('services.ticketmaster.key');
+        if ($clau === null || $clau === '') {
+            $clau = env('TICKETMASTER_API_KEY', '');
+        }
+        $this->apiKey = is_string($clau) ? $clau : '';
     }
 
     /**
@@ -51,9 +55,20 @@ class TicketmasterService
             'radius' => $radius,
         ]);
 
-        $cached = Redis::get($cacheKey);
-        if ($cached !== null) {
-            return json_decode($cached, true);
+        try {
+            $cached = Redis::get($cacheKey);
+            if ($cached !== null) {
+                $decoded = json_decode($cached, true);
+                if (is_array($decoded)) {
+                    return $decoded;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Redis no disponible: continuar sense cache
+        }
+
+        if ($this->apiKey === '') {
+            return [];
         }
 
         $queryParams = [
@@ -69,11 +84,20 @@ class TicketmasterService
         }
 
         try {
-            $response = Http::get(self::BASE_URL . '/events.json', $queryParams);
+            $response = Http::timeout(25)->get(self::BASE_URL . '/events.json', $queryParams);
             $data = $response->json();
+            if (! is_array($data)) {
+                return [];
+            }
 
-            $events = $this->transformEvents($data);
-            Redis::setex($cacheKey, self::CACHE_TTL, json_encode($events));
+            $embedded = $data['_embedded'] ?? [];
+            $events = $embedded['events'] ?? [];
+
+            try {
+                Redis::setex($cacheKey, self::CACHE_TTL, json_encode($events));
+            } catch (\Throwable $e) {
+                // Sense cache
+            }
 
             return $events;
         } catch (\Exception $e) {
@@ -89,6 +113,10 @@ class TicketmasterService
      */
     public function getEventById(string $id): ?array
     {
+        if ($this->apiKey === '') {
+            return null;
+        }
+
         $cacheKey = $this->generateCacheKey('event', ['id' => $id]);
 
         $cached = Redis::get($cacheKey);

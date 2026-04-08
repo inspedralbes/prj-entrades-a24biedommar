@@ -66,13 +66,18 @@ const QueueService = {
     afegirUsuari(socketId, userId, eventId) {
         const cua = this.inicialitzarCua(eventId);
         
-        // A. Comprovar si l'usuari ja és a la cua
+        // A. Mateix usuari (reconnect / segon socket): actualitzar socketId sense perdre posició
         for (const [sid, usuari] of cua.users) {
             if (usuari.userId === userId) {
-                return { 
-                    success: false, 
-                    message: 'Ja estàs a la cua', 
-                    position: usuari.position 
+                if (sid !== socketId) {
+                    cua.users.delete(sid);
+                    cua.users.set(socketId, { ...usuari });
+                }
+                return {
+                    success: true,
+                    position: usuari.position,
+                    message: 'Ja estàs a la cua',
+                    queueSize: cua.users.size
                 };
             }
         }

@@ -39,14 +39,23 @@ export const useQueueStore = defineStore('queue', () => {
      * B. Estableix la connexió Socket.IO.
      */
     function inicialitzarCua(idEvent, tokenAutenticacio, nomEvent = '', horaEvent = '') {
+        if (socket) {
+            socket.removeAllListeners();
+            socket.disconnect();
+            socket = null;
+        }
+
         eventId.value = idEvent;
         eventName.value = nomEvent;
         eventTime.value = horaEvent;
         
         // Import dinàmic per evitar circular dependency
         import('socket.io-client').then(({ io }) => {
-            const GATEKEEPER_URL = import.meta.env.VITE_GATEKEEPER_URL || 'http://localhost:3001';
-            
+            const envUrl = typeof import.meta !== 'undefined' && import.meta.env
+                ? import.meta.env.NUXT_PUBLIC_SOCKET_URL
+                : '';
+            const GATEKEEPER_URL = envUrl || 'http://localhost:3001';
+
             socket = io(GATEKEEPER_URL, {
                 auth: { token: tokenAutenticacio },
                 transports: ['websocket', 'polling'],

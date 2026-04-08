@@ -1,6 +1,6 @@
 //================================ NAMESPACES / IMPORTS ============
 const Redis = require('redis');
-const { QueueService } = require('./services/QueueService');
+const { QueueService } = require('./QueueService');
 
 //================================ VARIABLES / CONSTANTS ============
 

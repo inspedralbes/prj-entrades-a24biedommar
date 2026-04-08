@@ -9,4 +9,5 @@ RUN apk add --no-cache libc6-compat
 # Default command for Nuxt (override in compose for Node backend)
 # In development, we rely on the mounted volume for node_modules 
 # or install them if missing.
-CMD if [ -z "$(ls -A node_modules 2>/dev/null)" ]; then npm install; fi && npm run dev -- --host
+# npm install assegura node_modules al volum anomenat; sense --host extra (nodemon no ho suporta bé)
+CMD sh -c "npm install && exec npm run dev"

@@ -37,6 +37,26 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', service: 'gatekeeper' });
 });
 
+app.get('/internal/queue/status/:eventId', (req, res) => {
+    const { eventId } = req.params;
+    const QueueService = require('./src/services/QueueService');
+    const estadistiques = QueueService.obtenirEstadistiques(eventId);
+    res.json({
+        queueSize: estadistiques.activeUsers,
+        thresholdN: estadistiques.thresholdN
+    });
+});
+
+app.get('/api/queue/status/:eventId', (req, res) => {
+    const { eventId } = req.params;
+    const QueueService = require('./src/services/QueueService');
+    const estadistiques = QueueService.obtenirEstadistiques(eventId);
+    res.json({
+        queueSize: estadistiques.activeUsers,
+        thresholdN: estadistiques.thresholdN
+    });
+});
+
 app.get('/', (req, res) => {
     res.json({ 
         service: 'The Gatekeeper - TicketMaster',

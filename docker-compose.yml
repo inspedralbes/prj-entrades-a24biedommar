@@ -7,6 +7,7 @@ services:
       dockerfile: ../docker/node/Dockerfile
     ports:
       - "3000:3000"
+    command: sh -c "npm install && exec npx nuxt dev --host 0.0.0.0 --port 3000"
     volumes:
       - ./frontend:/app
       - node_modules_front:/app/node_modules
@@ -14,6 +15,7 @@ services:
       - NODE_ENV=development
       - NUXT_PUBLIC_API_URL=http://localhost:8000
       - NUXT_PUBLIC_SOCKET_URL=http://localhost:3001
+      - NUXT_API_PROXY_TARGET=http://back_laravel:8000
     depends_on:
       - back_laravel
       - back_node_io
@@ -24,8 +26,8 @@ services:
   back_laravel:
     container_name: back_laravel
     build:
-      context: ./backend-api
-      dockerfile: ../docker/php/Dockerfile
+      context: .
+      dockerfile: docker/php/Dockerfile
     ports:
       - "8000:8000"
     volumes:
@@ -58,8 +60,10 @@ services:
     environment:
       - REDIS_HOST=cache_redis
       - PORT=3001
+      - LARAVEL_API_URL=http://back_laravel:8000
     depends_on:
       - cache_redis
+      - back_laravel
     networks:
       - tr3_network
 

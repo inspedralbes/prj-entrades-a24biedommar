@@ -8,6 +8,10 @@ const loading = ref(false);
 
 const router = useRouter();
 
+/**
+ * Després del login: return_to segur del backend, cookie o /.
+ * Si ja hi ha turn_token vàlid i el destí és la cua, va directe a la landing.
+ */
 async function handleLogin() {
     error.value = '';
     loading.value = true;
@@ -18,14 +22,21 @@ async function handleLogin() {
         return;
     }
 
+    const cookieReturnTo = useCookie('return_to', { path: '/' });
+
     try {
-        const returnTo = useCookie('return_to').value || '/';
-        await authStore.login(correu.value, contrasenya.value, returnTo);
-        
-        const redirectUrl = useCookie('return_to').value || '/';
-        useCookie('return_to').value = null;
-        
-        await router.push(redirectUrl);
+        const returnTo = cookieReturnTo.value || '/';
+        const resposta = await authStore.login(correu.value, contrasenya.value, returnTo);
+
+        let desti = resposta.return_to_resolta || cookieReturnTo.value || '/';
+
+        if (authStore.teTurnTokenDesat() && desti.startsWith('/waiting-room')) {
+            desti = '/';
+        }
+
+        cookieReturnTo.value = null;
+
+        await router.push(desti);
     } catch (err) {
         error.value = err.data?.missatge || 'Credencials incorrectes';
     } finally {
@@ -82,7 +93,7 @@ async function handleLogin() {
                 </button>
 
                 <div class="text-center">
-                    <NuxtLink to="/register" class="text-[#00F0FF] font-bold hover:underline">
+                    <NuxtLink to="/auth/register" class="text-[#00F0FF] font-bold hover:underline">
                         Crear un compte
                     </NuxtLink>
                 </div>

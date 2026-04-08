@@ -51,10 +51,18 @@
                             <div class="position-display">
                                 <span class="position-label">La teva posició</span>
                                 <div class="position-number">
-                                    <span class="digit">{{ queueStore.position || queueStore.waitlistPosition || '-' }}</span>
+                                    <span class="digit">{{
+                                        queueStore.isInWaitlist
+                                            ? (queueStore.waitlistPosition ?? '-')
+                                            : (queueStore.position ?? '-')
+                                    }}</span>
                                 </div>
                                 <span class="position-suffix">
-                                    {{ queueStore.isInWaitlist ? 'a la llista d\'espera' : (queueStore.position === 1 ? '' : 'a la cua') }}
+                                    {{
+                                        queueStore.isInWaitlist
+                                            ? 'a la llista d\'espera'
+                                            : (queueStore.position != null && queueStore.position > 1 ? 'a la cua' : '')
+                                    }}
                                 </span>
                             </div>
                         </div>
@@ -144,10 +152,11 @@
 <script setup>
 //================================ SCRIPT SETUP ==================
 
+import { useQueueStore } from '~/stores/queue';
+import { useAuthStore } from '~/stores/auth';
+
 const route = useRoute();
 const router = useRouter();
-const { useQueueStore } = await import('@/stores/queue');
-const { useAuthStore } = await import('@/stores/auth');
 
 const queueStore = useQueueStore();
 const authStore = useAuthStore();
@@ -155,27 +164,43 @@ const authStore = useAuthStore();
 const eventId = route.params.eventId;
 const showConfirmModal = ref(false);
 
+/** Evita redireccions múltiples quan és el torn (integració Cua → Landing). */
+const redireccioLandingEnCurs = ref(false);
+
 //================================ LIFECYCLE ======================
 
 onMounted(() => {
-    // A. Comprovar que l'usuari està autenticat
-    if (!authStore.token) {
-        router.push('/auth/login?redirect=' + encodeURIComponent(route.fullPath));
-        return;
+    if (!authStore.estat.token) {
+        return navigateTo('/auth/login');
     }
 
-    // B. Obtenir dades de l'event (si és passat com a query)
     const nomEvent = route.query.nom || '';
     const horaEvent = route.query.hora || '';
 
-    // C. Inicialitzar la cua
-    queueStore.inicialitzarCua(eventId, authStore.token, nomEvent, horaEvent);
+    queueStore.inicialitzarCua(eventId, authStore.estat.token, nomEvent, horaEvent);
 });
 
 onUnmounted(() => {
-    // Desconnectar en sortir de la pàgina
     queueStore.desconnectar();
 });
+
+/**
+ * Quan posició 1 i turn token: sincronitza authStore i redirigeix a la landing (S1.14).
+ */
+watch(
+    () => ({ first: queueStore.isFirst, tok: queueStore.turnToken }),
+    ({ first, tok }) => {
+        if (!first || !tok || redireccioLandingEnCurs.value) {
+            return;
+        }
+        redireccioLandingEnCurs.value = true;
+        authStore.establirEstatCua(tok, queueStore.position ?? 1);
+        setTimeout(() => {
+            router.push({ path: '/', query: { event: String(eventId) } });
+        }, 2200);
+    },
+    { deep: true }
+);
 
 //================================ METODES ========================
 
@@ -184,17 +209,16 @@ onUnmounted(() => {
  */
 function reconnectar() {
     queueStore.reset();
-    queueStore.inicialitzarCua(eventId, authStore.token, '', '');
+    queueStore.inicialitzarCua(eventId, authStore.estat.token, '', '');
 }
 
 /**
- * Accedir al mapa de seients
+ * Accedir a la landing amb l'event seleccionat (mapa de seients pendent Sprint 2).
  */
 function accedirMapa() {
     if (queueStore.turnToken) {
-        // Guardar el turn token i redirigir al mapa
-        localStorage.setItem('turn_token', queueStore.turnToken);
-        router.push(`/seients/${eventId}`);
+        authStore.establirEstatCua(queueStore.turnToken, queueStore.position ?? 1);
+        router.push({ path: '/', query: { event: String(eventId) } });
     }
 }
 

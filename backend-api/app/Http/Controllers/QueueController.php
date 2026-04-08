@@ -8,6 +8,7 @@ use App\Services\QueueEventService;
 use App\Models\Esdeveniment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 //================================ PROPIETATS / ATRIBUTS ==========
 

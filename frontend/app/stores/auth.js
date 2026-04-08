@@ -1,20 +1,66 @@
 import { defineStore } from 'pinia';
+import { reactive, ref, computed } from 'vue';
 
+/**
+ * Store d'autenticació i dades de cua (integració Login → Cua → Landing).
+ */
 export const useAuthStore = defineStore('auth', () => {
-    // A. Estat inicial de la Store
-    const estat = {
+    const estat = reactive({
         token: null,
         usuari: null,
         estaAutenticat: false,
         carregant: false,
         error: null,
-    };
+    });
+
+    /** Token de torn de la cua virtual (sincronitzat amb queueStore quan escau). */
+    const cuaTurnToken = ref(null);
+
+    /** Posició a la cua (per mostrar o lògica post-login). */
+    const cuaPosicio = ref(null);
+
+    /** Evita múltiples initAuth al client. */
+    const sessioInicialitzada = ref(false);
+
+    const token = computed(() => estat.token);
+
+    /**
+     * Actualitza turn token i posició des de la cua (Pinia integració S1.14).
+     */
+    function establirEstatCua(turnToken, posicio) {
+        cuaTurnToken.value = turnToken;
+        cuaPosicio.value = posicio;
+        if (process.client && turnToken) {
+            localStorage.setItem('turn_token', turnToken);
+        }
+    }
+
+    /**
+     * Neteja l'estat de cua al store.
+     */
+    function netejarEstatCua() {
+        cuaTurnToken.value = null;
+        cuaPosicio.value = null;
+        if (process.client) {
+            localStorage.removeItem('turn_token');
+        }
+    }
+
+    /**
+     * Comprova si hi ha un turn_token desat (per exemple després del login).
+     */
+    function teTurnTokenDesat() {
+        if (cuaTurnToken.value) {
+            return true;
+        }
+        if (process.client && localStorage.getItem('turn_token')) {
+            return true;
+        }
+        return false;
+    }
 
     /**
      * Inicia sessio amb correu electronic i contrasenya.
-     * A. Valida les credencials amb el backend Laravel.
-     * B. desa el token a localStorage.
-     * C. Actualitza l'estat de la Store.
      */
     async function login(correu, contrasenya, returnTo = '/') {
         estat.carregant = true;
@@ -49,10 +95,8 @@ export const useAuthStore = defineStore('auth', () => {
 
     /**
      * Registra un nou usuari al sistema.
-     * A. Envia les dades al endpoint de registre.
-     * B. Retorna la resposta del servidor.
      */
-    async function register(nom, correu, contrasenya) {
+    async function register(nom, correu, contrasenya, contrasenyaConfirmacio) {
         estat.carregant = true;
         estat.error = null;
 
@@ -63,6 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
                     nom: nom,
                     correu_electronic: correu,
                     contrasenya: contrasenya,
+                    contrasenya_confirmation: contrasenyaConfirmacio,
                 },
             });
 
@@ -77,11 +122,11 @@ export const useAuthStore = defineStore('auth', () => {
 
     /**
      * Tanca la sessio de l'usuari actual.
-     * A. Revoca el token al backend.
-     * B. Neteja l'estat local.
      */
     async function logout() {
-        if (!estat.token) return;
+        if (!estat.token) {
+            return;
+        }
 
         try {
             await $fetch('/api/logout', {
@@ -96,6 +141,7 @@ export const useAuthStore = defineStore('auth', () => {
             estat.token = null;
             estat.usuari = null;
             estat.estaAutenticat = false;
+            netejarEstatCua();
 
             if (process.client) {
                 localStorage.removeItem('auth_token');
@@ -105,11 +151,11 @@ export const useAuthStore = defineStore('auth', () => {
 
     /**
      * Obté les dades de l'usuari autenticat des del backend.
-     * A. Crida l'endpoint /api/usuari.
-     * B. Actualitza les dades de l'usuari a l'estat.
      */
     async function fetchUser() {
-        if (!estat.token) return;
+        if (!estat.token) {
+            return;
+        }
 
         try {
             const resposta = await $fetch('/api/usuari', {
@@ -118,7 +164,8 @@ export const useAuthStore = defineStore('auth', () => {
                 },
             });
 
-            estat.usuari = resposta;
+            const u = resposta.data !== undefined ? resposta.data : resposta;
+            estat.usuari = u;
         } catch (err) {
             await logout();
         }
@@ -126,22 +173,41 @@ export const useAuthStore = defineStore('auth', () => {
 
     /**
      * Inicialitza l'estat d'autenticacio des de localStorage.
-     * A. Recupera el token guardat.
-     * B. Valida el token carregant les dades de l'usuari.
      */
     async function initAuth() {
-        if (process.client) {
-            const tokenGuardat = localStorage.getItem('auth_token');
-            if (tokenGuardat) {
-                estat.token = tokenGuardat;
-                estat.estaAutenticat = true;
-                await fetchUser();
-            }
+        if (!process.client) {
+            return;
+        }
+
+        if (sessioInicialitzada.value) {
+            return;
+        }
+
+        sessioInicialitzada.value = true;
+
+        const tokenGuardat = localStorage.getItem('auth_token');
+        const turnGuardat = localStorage.getItem('turn_token');
+
+        if (turnGuardat) {
+            cuaTurnToken.value = turnGuardat;
+        }
+
+        if (tokenGuardat) {
+            estat.token = tokenGuardat;
+            estat.estaAutenticat = true;
+            await fetchUser();
         }
     }
 
     return {
         estat,
+        token,
+        cuaTurnToken,
+        cuaPosicio,
+        sessioInicialitzada,
+        establirEstatCua,
+        netejarEstatCua,
+        teTurnTokenDesat,
         login,
         register,
         logout,

@@ -35,10 +35,10 @@ async function handleRegister() {
     }
 
     try {
-        await authStore.register(nom.value, correu.value, contrasenya.value);
+        await authStore.register(nom.value, correu.value, contrasenya.value, confirmPassword.value);
         success.value = 'Compte creat correctament. Pots iniciar sessio.';
         setTimeout(() => {
-            router.push('/login');
+            router.push('/auth/login');
         }, 2000);
     } catch (err) {
         error.value = err.data?.missatge || 'Error en el registre';
@@ -126,10 +126,11 @@ async function handleRegister() {
                 </button>
 
                 <div class="text-center">
-                    <NuxtLink to="/login" class="text-[#00F0FF] font-bold hover:underline">
+                    <NuxtLink to="/auth/login" class="text-[#00F0FF] font-bold hover:underline">
                         Ja tens compte? Iniciar sessio
                     </NuxtLink>
                 </div>
             </form>
         </div>
+    </div>
 </template>

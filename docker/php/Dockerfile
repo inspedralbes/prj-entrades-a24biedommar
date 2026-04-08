@@ -35,23 +35,8 @@ RUN pecl install redis && docker-php-ext-enable redis
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Setup entrypoint to install deps if missing
-COPY <<EOF /usr/local/bin/docker-entrypoint-laravel.sh
-#!/bin/sh
-set -e
+# Script d'entrada (fitxer apart per evitar problemes CRLF amb heredoc a Windows)
+COPY docker/php/docker-entrypoint-laravel.sh /usr/local/bin/docker-entrypoint-laravel.sh
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint-laravel.sh && chmod +x /usr/local/bin/docker-entrypoint-laravel.sh
 
-if [ ! -f "composer.lock" ]; then
-  echo "Composer dependencies missing. Installing..."
-  composer install --no-interaction --no-scripts --no-autoloader
-  composer dump-autoload --optimize
-fi
-
-# Run php-fpm (default) or serve (for easy dev)
-# If using serve, we use port 8000
-php artisan serve --host=0.0.0.0 --port=8000
-EOF
-
-RUN chmod +x /usr/local/bin/docker-entrypoint-laravel.sh
-
-# Entrypoint script config
-ENTRYPOINT ["docker-entrypoint-laravel.sh"]
+ENTRYPOINT ["/bin/sh", "/usr/local/bin/docker-entrypoint-laravel.sh"]

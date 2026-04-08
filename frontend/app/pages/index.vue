@@ -1,6 +1,6 @@
 <script setup>
-import { useEventsStore } from '~/app/stores/events';
-import { useAuthStore } from '~/app/stores/auth';
+import { useEventsStore } from '~/stores/events';
+import { useAuthStore } from '~/stores/auth';
 
 const eventsStore = useEventsStore();
 const authStore = useAuthStore();
@@ -105,7 +105,7 @@ function updateRadius(event) {
         <footer class="mt-40 pt-10 border-t border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-6 pb-10">
             <p class="text-zinc-700 font-bold text-[10px] uppercase">© 2026 TR3 TicketMaster • DICE Inspired UI</p>
             <div class="flex gap-8">
-                <NuxtLink v-if="!authStore.estat.estaAutenticat" to="/login" class="text-white font-black uppercase text-xs hover:text-[#FF0055]">Login</NuxtLink>
+                <NuxtLink v-if="!authStore.estat.estaAutenticat" to="/auth/login" class="text-white font-black uppercase text-xs hover:text-[#FF0055]">Login</NuxtLink>
                 <button v-else @click="authStore.logout" class="text-white font-black uppercase text-xs hover:text-[#FF0055]">Logout ({{ authStore.estat.usuari?.nom }})</button>
             </div>
         </footer>

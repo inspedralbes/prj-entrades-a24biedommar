@@ -1,27 +1,60 @@
 //================================ CONFIGURACIÓ NUXT 4 ============
 
+const proxyApi = process.env.NUXT_API_PROXY_TARGET || 'http://127.0.0.1:8000';
+
 export default defineNuxtConfig({
     compatibilityDate: '2025-07-15',
-    devtools: { enabled: true },
-    
+    /**
+     * Desactivat: amb certes peticions fantasma (extensions del navegador, rutes absolutes
+     * tipus /components/ui/...), vite-plugin-inspect provoca ENOENT en interceptar la càrrega.
+     * Pots tornar a activar-lo si cal el panell d’inspecció de Vite.
+     */
+    devtools: { enabled: false },
+
+    hooks: {
+        'vite:extendConfig'(config) {
+            const plugins = config.plugins;
+            if (!Array.isArray(plugins)) {
+                return;
+            }
+            config.plugins = plugins.filter((p) => {
+                if (p && typeof p === 'object' && 'name' in p) {
+                    return (p as { name?: string }).name !== 'vite-plugin-inspect';
+                }
+                return true;
+            });
+        },
+    },
+
     // Estructura de directoris (Nuxt 4 Standard)
     srcDir: 'app/',
     dir: {
-        pages: 'app/pages',
-        layouts: 'app/layouts',
-        middleware: 'app/middleware',
-        plugins: 'app/plugins',
+        pages: 'pages',
+        middleware: 'middleware',
+        plugins: 'plugins',
     },
 
     // Mòduls
     modules: [
         '@pinia/nuxt',
+        '@nuxtjs/tailwindcss',
     ],
 
     // Configuració CSS (Estètica DICE)
     css: [
         '~/assets/css/main.css',
     ],
+
+    vite: {
+        server: {
+            proxy: {
+                '/api': {
+                    target: proxyApi,
+                    changeOrigin: true,
+                },
+            },
+        },
+    },
 
     // Variables d'entorn pública
     runtimeConfig: {
@@ -34,7 +67,7 @@ export default defineNuxtConfig({
 
     // Configuració de renderitzat
     routeRules: {
-        '/': { prerender: true },
+        '/': { ssr: false },
         '/mapa/**': { ssr: false },
         '/cuenta/**': { ssr: false },
     },

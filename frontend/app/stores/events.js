@@ -37,9 +37,17 @@ export const useEventsStore = defineStore('events', () => {
                 query.lon = userLocation.value.lon;
             }
 
-            // Crida a l'API de Laravel (EventController@index)
+            // Crida a l'API de Laravel (EventController@index retorna { esdeveniments } o array)
             const data = await $fetch('/api/events', { query });
-            events.value = data;
+            if (Array.isArray(data)) {
+                events.value = data;
+            } else if (data.esdeveniments) {
+                events.value = data.esdeveniments;
+            } else if (data.events) {
+                events.value = data.events;
+            } else {
+                events.value = [];
+            }
 
             // Si l'usuari està autenticat, carreguem els seus favorits
             if (authStore.estat.estaAutenticat) {
@@ -76,7 +84,7 @@ export const useEventsStore = defineStore('events', () => {
      */
     async function addFavorite(event) {
         if (!authStore.estat.estaAutenticat) {
-            return navigateTo('/login');
+            return navigateTo('/auth/login');
         }
 
         // 1. SNAPSHOT & MUTACIÓ OPTIMISTA
