@@ -1,72 +1,101 @@
 //================================ NAMESPACES / IMPORTS ============
+require('dotenv').config();
 
 const express = require('express');
 const { createServer } = require('node:http');
 const { Server } = require('socket.io');
 const Redis = require('redis');
 
+const { inicialitzarHandlersCua } = require('./src/sockets/gatekeeperHandlers');
+const { 
+    inicialitzarSubscriber, 
+    configurarSubscripcions,
+    configurarAdminCommands 
+} = require('./src/services/redisSubscriber');
+
 //================================ VARIABLES / CONSTANTS ============
 
 const app = express();
 const server = createServer(app);
+
 const io = new Server(server, {
     cors: {
-        origin: '*',
+        origin: process.env.CORS_ORIGIN || '*',
+        methods: ['GET', 'POST'],
+        credentials: true
     }
 });
 
 const PORT = process.env.PORT || 3001;
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
+const REDIS_PORT = process.env.REDIS_PORT || 6379;
+
+//================================ MIDDLEWARE =======================
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', service: 'gatekeeper' });
+});
+
+app.get('/', (req, res) => {
+    res.json({ 
+        service: 'The Gatekeeper - TicketMaster',
+        version: '1.0.0',
+        status: 'running'
+    });
+});
 
 //================================ FUNCIONS / LÒGICA ================
 
-function inicialitzarRedis() {
-    // A. Crear client de Redis per subscriure's als canals de Laravel
-    const subscriber = Redis.createClient({
-        socket: {
-            host: REDIS_HOST,
-            port: 6379
+/**
+ * Inicialitza el servidor de temps real
+ * A. Configura Socket.IO
+ * B. Inicialitza el subscriber de Redis
+ * C. Inicia el servidor HTTP
+ */
+async function iniciarServidor() {
+    try {
+        // A. Inicialitzar handlers de Socket.IO per a la cua
+        inicialitzarHandlersCua(io);
+        console.log('✅ Handlers de cua inicialitzats');
+
+        // B. Inicialitzar Redis subscriber
+        let redisSubscriber = null;
+        
+        try {
+            redisSubscriber = await inicialitzarSubscriber();
+            
+            // C. Configurar subscripcions
+            await configurarSubscripcions(redisSubscriber, io);
+            await configurarAdminCommands(redisSubscriber, io);
+            
+            console.log('✅ Redis subscriber configurat');
+        } catch (redisError) {
+            console.warn('⚠️ Redis no disponible, continuant sense subscripcions:', redisError.message);
         }
-    });
 
-    subscriber.on('error', (err) => {
-        console.error('Error de connexió Redis:', err);
-    });
-
-    return subscriber;
-}
-
-function configurarSocketIO() {
-    // A. Configurar esdeveniments de connexió
-    io.on('connection', (socket) => {
-        console.log('Usuari connectat:', socket.id);
-
-        // B. Escoltar esdeveniments del client
-        socket.on('unirse-evento', (eventId) => {
-            socket.join(`evento-${eventId}`);
-            console.log(`Usuari ${socket.id} unit a l'esdeveniment ${eventId}`);
+        // D. Iniciar servidor
+        server.listen(PORT, () => {
+            console.log(`🛡️ The Gatekeeper iniciat al port ${PORT} ✅`);
+            console.log(`   WebSocket: ws://localhost:${PORT}`);
+            console.log(`   Health: http://localhost:${PORT}/health`);
         });
 
-        socket.on('disconnect', () => {
-            console.log('Usuari desconnectat:', socket.id);
-        });
-    });
+    } catch (error) {
+        console.error('❌ Error iniciant el servidor:', error);
+        process.exit(1);
+    }
 }
 
-function iniciarServidor() {
-    // A. Iniciar el servidor al port especificat
-    server.listen(PORT, () => {
-        console.log(`Servidor Real-time iniciat al port ${PORT} ✅`);
+//================================ INICI ===========================
+
+iniciarServidor();
+
+// Handle shutdown graceful
+process.on('SIGTERM', () => {
+    console.log('📡 SIGTERM rebut, tancant servidor...');
+    server.close(() => {
+        console.log('✅ Servidor tancat');
+        process.exit(0);
     });
-}
-
-//================================ EXPORTS ==========================
-
-// B. Iniciar l'aplicació
-(async () => {
-    const redisClient = inicialitzarRedis();
-    await redisClient.connect();
-    
-    configurarSocketIO();
-    iniciarServidor();
-})();
+});
