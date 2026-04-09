@@ -105,10 +105,10 @@ VALUES
 -- comandes
 -- Una comanda completada (Laia): dos seients VIP; una comanda pendent (Marc) sense tiquets encara.
 -- -----------------------------------------------------------------------------
-INSERT INTO comandes (usuari_id, import_total, estat, id_intencio_pagament, creat_el)
+INSERT INTO comandes (usuari_id, import_total, estat, id_intencio_pagament, tm_event_id, detall_event_json, creat_el)
 VALUES
-    (2, 200.00, 'completada', 'pi_prova_completada_001', NOW() - INTERVAL '2 days'),
-    (3, 90.00, 'pendent', 'pi_prova_pendent_002', NOW() - INTERVAL '10 minutes');
+    (2, 200.00, 'completada', 'pi_prova_completada_001', NULL, NULL, NOW() - INTERVAL '2 days'),
+    (3, 90.00, 'pendent', 'pi_prova_pendent_002', NULL, NULL, NOW() - INTERVAL '10 minutes');
 
 -- -----------------------------------------------------------------------------
 -- tiquets

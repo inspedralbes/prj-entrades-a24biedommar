@@ -89,11 +89,19 @@ export const useEventsStore = defineStore('events', () => {
 
         // 1. SNAPSHOT & MUTACIÓ OPTIMISTA
         const backup = [...favorites.value];
+        let eventData = null;
+        if (event.dates && event.dates.start && event.dates.start.localDate) {
+            eventData = event.dates.start.localDate;
+        }
+        let eventImatge = null;
+        if (event.images && event.images[0] && event.images[0].url) {
+            eventImatge = event.images[0].url;
+        }
         favorites.value.push({
             event_id: event.id,
             event_nom: event.name,
-            event_data: event.dates?.start?.localDate,
-            event_imatge: event.images?.[0]?.url,
+            event_data: eventData,
+            event_imatge: eventImatge,
         });
 
         try {
@@ -106,8 +114,8 @@ export const useEventsStore = defineStore('events', () => {
                 body: {
                     event_id: event.id,
                     event_nom: event.name,
-                    event_data: event.dates?.start?.localDate,
-                    event_imatge: event.images?.[0]?.url,
+                    event_data: eventData,
+                    event_imatge: eventImatge,
                 },
             });
         } catch (err) {

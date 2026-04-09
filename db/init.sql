@@ -117,6 +117,7 @@ CREATE TABLE seients (
 -- comandes
 -- Propòsit: comanda de compra (import, estat de pagament, vinculació a passarel·la).
 -- Relacions: FK a usuaris; 1:N amb tiquets.
+-- tm_event_id + detall_event_json: compres d’entrades Ticketmaster (sense seient local).
 -- Camps crítics: id_intencio_pagament per webhooks; import_total coherent amb el pagament.
 -- -----------------------------------------------------------------------------
 CREATE TABLE comandes (
@@ -125,25 +126,29 @@ CREATE TABLE comandes (
     import_total NUMERIC(10, 2) NOT NULL,
     estat estat_comanda NOT NULL,
     id_intencio_pagament VARCHAR(255),
+    tm_event_id VARCHAR(100),
+    detall_event_json JSONB,
     creat_el TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT uq_comandes_id_intencio_pagament UNIQUE (id_intencio_pagament)
 );
 
 -- -----------------------------------------------------------------------------
 -- tiquets
--- Propòsit: entrada emesa (comanda + seient) amb hash únic per validació (QR).
--- Relacions: FK a comandes i seients.
--- Camps crítics: hash_qr únic; un seient venut no pot tenir dos tiquets.
+-- Propòsit: entrada emesa (comanda + opcionalment seient local) amb hash únic per validació (QR).
+-- Relacions: FK a comandes; seient_id NULL = entrada TM general (sense mapa local).
+-- Camps crítics: hash_qr únic; si seient_id no és null, un seient no pot tenir dos tiquets.
 -- -----------------------------------------------------------------------------
 CREATE TABLE tiquets (
     id SERIAL PRIMARY KEY,
     comanda_id INTEGER NOT NULL REFERENCES comandes (id) ON DELETE CASCADE,
-    seient_id INTEGER NOT NULL REFERENCES seients (id) ON DELETE RESTRICT,
+    seient_id INTEGER REFERENCES seients (id) ON DELETE RESTRICT,
     hash_qr TEXT NOT NULL,
     comprat_el TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT uq_tiquets_seient UNIQUE (seient_id),
     CONSTRAINT uq_tiquets_hash_qr UNIQUE (hash_qr)
 );
+
+-- Un mateix seient local només pot tenir un tiquet (entrades amb seient assignat)
+CREATE UNIQUE INDEX uq_tiquets_seient_quan_assignat ON tiquets (seient_id) WHERE seient_id IS NOT NULL;
 
 -- -----------------------------------------------------------------------------
 -- favorits
@@ -176,5 +181,6 @@ CREATE INDEX idx_seients_retingut ON seients (retingut_per_usuari_id);
 CREATE INDEX idx_seients_estat ON seients (estat);
 CREATE INDEX idx_comandes_usuari ON comandes (usuari_id);
 CREATE INDEX idx_comandes_creat ON comandes (creat_el);
+CREATE INDEX idx_comandes_tm_event ON comandes (tm_event_id);
 CREATE INDEX idx_tiquets_comanda ON tiquets (comanda_id);
 CREATE INDEX idx_favorits_usuari ON favorits (usuari_id);

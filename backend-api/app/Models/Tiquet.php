@@ -52,7 +52,7 @@ class Tiquet extends Model
     }
 
     /**
-     * Seient assignat a aquest tiquet.
+     * Seient assignat (null = entrada TM general sense mapa local).
      */
     public function seient(): BelongsTo
     {

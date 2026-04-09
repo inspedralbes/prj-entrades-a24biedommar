@@ -1,85 +1,69 @@
 <?php
 
-//================================ NAMESPACES / IMPORTS ============
+namespace App\Console\Commands;
 
-namespace App\Http\Controllers;
-
-use App\Services\TicketmasterService;
 use App\Models\Esdeveniment;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use App\Services\TicketmasterService;
+use Illuminate\Console\Command;
 
-//================================ PROPIETATS / ATRIBUTS ==========
-
-//================================ MÈTODES / FUNCIONS ===========
-
-/**
- * Controlador per gestionar esdeveniments des de Ticketmaster API.
- */
-class EventController extends Controller
+class SyncEventsCommand extends Command
 {
-    // A. Propietats del controlador
-    private TicketmasterService $ticketmasterService;
+    protected $signature = 'events:sync
+                            {--force : Forçar sincronització independentment del cache}
+                            {--limit= : Limitar nombre d\'esdeveniments}
+                            {--event-id= : Sincronitzar un sol event específic}';
 
-    // B. Constructor amb injecció de dependències
-    public function __construct(TicketmasterService $ticketmasterService)
-    {
-        $this->ticketmasterService = $ticketmasterService;
+    protected $description = 'Sincronitza esdeveniments des de Ticketmaster';
+
+    public function __construct(
+        private TicketmasterService $ticketmasterService
+    ) {
+        parent::__construct();
     }
 
-    /**
-     * Obté el llistat d'esdeveniments.
-     * A. Valida els paràmetres de cerca (lat, lng, radi).
-     * B. Crida el servei de Ticketmaster.
-     * C. Retorna la llista d'esdeveniments.
-     */
-    public function index(Request $request): JsonResponse
+    public function handle(): int
     {
-        $lat = $request->input('lat');
-        $lng = $request->input('lng');
-        $radius = $request->input('radius', 50);
+        $force = $this->option('force');
+        $limit = $this->option('limit');
+        $eventId = $this->option('event-id');
 
-        $events = $this->ticketmasterService->getEvents($lat, $lng, $radius);
+        $this->info('Iniciant sincronització d\'esdeveniments...');
 
-        return response()->json([
-            'esdeveniments' => $events,
-        ], 200);
-    }
-
-    /**
-     * Obté el detall d'un esdeveniment específic.
-     * A. Valida l'ID de l'esdeveniment.
-     * B. Crida el servei de Ticketmaster per obtenir el detall.
-     * C. Retorna les dades de l'esdeveniment.
-     */
-    public function show(string $id): JsonResponse
-    {
-        $event = $this->ticketmasterService->getEventById($id);
-
-        if ($event === null) {
-            return response()->json([
-                'missatge' => 'Esdeveniment no trobat.',
-            ], 404);
+        if ($eventId) {
+            return $this->syncSingleEvent($eventId);
         }
 
-        return response()->json([
-            'esdeveniment' => $event,
-        ], 200);
+        return $this->syncAllEvents($limit, $force);
     }
 
-    public function syncEvents(Request $request): JsonResponse
+    private function syncSingleEvent(string $eventId): int
     {
-        $force = $request->input('force', false);
-        $limit = $request->input('limit', 200);
+        $this->info("Sincronitzant event: {$eventId}");
 
-        $eventsData = $this->ticketmasterService->getAllEvents((int) $limit);
+        $eventData = $this->ticketmasterService->getEventById($eventId);
+
+        if (! $eventData) {
+            $this->error("No s'ha pogut obtenir l'event de Ticketmaster");
+            return Command::FAILURE;
+        }
+
+        $this->saveEvent($eventData);
+
+        $this->info("Event sincronitzat correctament");
+        return Command::SUCCESS;
+    }
+
+    private function syncAllEvents(?int $limit, bool $force): int
+    {
+        $mida = 200;
+        if ($limit !== null) {
+            $mida = $limit;
+        }
+        $eventsData = $this->ticketmasterService->getAllEvents($mida);
 
         if (empty($eventsData)) {
-            return response()->json([
-                'success' => false,
-                'synced' => 0,
-                'errors' => ['No s\'han pogut obtenir esdeveniments de Ticketmaster'],
-            ], 500);
+            $this->error('No s\'han pogut obtenir esdeveniments de Ticketmaster');
+            return Command::FAILURE;
         }
 
         $count = 0;
@@ -94,11 +78,16 @@ class EventController extends Controller
             }
         }
 
-        return response()->json([
-            'success' => true,
-            'synced' => $count,
-            'errors' => $errors,
-        ], 200);
+        $this->info("Sincronitzats {$count} esdeveniments");
+
+        if (! empty($errors)) {
+            $this->warn('Errors durant la sincronització:');
+            foreach ($errors as $error) {
+                $this->line("  - {$error}");
+            }
+        }
+
+        return Command::SUCCESS;
     }
 
     private function saveEvent(array $eventData): Esdeveniment

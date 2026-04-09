@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-//================================ IMPORTS ============
+// ================================ IMPORTS ============
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-//================================ CLASSE ============
+// ================================ CLASSE ============
 
 /**
  * Model per a la taula `comandes`.
@@ -31,7 +31,7 @@ class Comanda extends Model
      */
     public const UPDATED_AT = null;
 
-    //================================ PROPIETATS ============
+    // ================================ PROPIETATS ============
 
     /**
      * @var list<string>
@@ -41,9 +41,11 @@ class Comanda extends Model
         'import_total',
         'estat',
         'id_intencio_pagament',
+        'tm_event_id',
+        'detall_event_json',
     ];
 
-    //================================ RELACIONS ============
+    // ================================ RELACIONS ============
 
     /**
      * Usuari comprador de la comanda.
@@ -61,7 +63,7 @@ class Comanda extends Model
         return $this->hasMany(Tiquet::class, 'comanda_id');
     }
 
-    //================================ CASTS ============
+    // ================================ CASTS ============
 
     /**
      * @return array<string, string>
@@ -72,6 +74,15 @@ class Comanda extends Model
             'creat_el' => 'datetime',
             'import_total' => 'decimal:2',
             'estat' => 'string',
+            'detall_event_json' => 'array',
         ];
+    }
+
+    /**
+     * Comandes amb entrades Ticketmaster (sense mapa local de seients).
+     */
+    public function scopeAmbTicketmaster($query)
+    {
+        return $query->whereNotNull('tm_event_id');
     }
 }

@@ -17,6 +17,9 @@ function esRutaPublica(path) {
     if (path === '/') {
         return true;
     }
+    if (path === '/event' || path.startsWith('/event/')) {
+        return true;
+    }
     return rutesPubliquesPrefixes.some((p) => {
         if (p === '/') {
             return false;

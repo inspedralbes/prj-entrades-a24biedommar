@@ -41,7 +41,11 @@ async function handleRegister() {
             router.push('/auth/login');
         }, 2000);
     } catch (err) {
-        error.value = err.data?.missatge || 'Error en el registre';
+        let msg = 'Error en el registre';
+        if (err && err.data && err.data.missatge) {
+            msg = err.data.missatge;
+        }
+        error.value = msg;
     } finally {
         loading.value = false;
     }

@@ -104,9 +104,16 @@ function updateRadius(event) {
         <!-- Footer / Nav temporal -->
         <footer class="mt-40 pt-10 border-t border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-6 pb-10">
             <p class="text-zinc-700 font-bold text-[10px] uppercase">© 2026 TR3 TicketMaster • DICE Inspired UI</p>
-            <div class="flex gap-8">
+            <div class="flex flex-wrap gap-6 md:gap-8 justify-center items-center">
+                <NuxtLink
+                    v-if="authStore.estat.estaAutenticat"
+                    to="/tickets"
+                    class="text-[#00F0FF] font-black uppercase text-xs hover:text-white"
+                >
+                    Les meves entrades
+                </NuxtLink>
                 <NuxtLink v-if="!authStore.estat.estaAutenticat" to="/auth/login" class="text-white font-black uppercase text-xs hover:text-[#FF0055]">Login</NuxtLink>
-                <button v-else @click="authStore.logout" class="text-white font-black uppercase text-xs hover:text-[#FF0055]">Logout ({{ authStore.estat.usuari?.nom }})</button>
+                <button v-else type="button" class="text-white font-black uppercase text-xs hover:text-[#FF0055]" @click="authStore.logout">Logout (<span v-if="authStore.estat.usuari && authStore.estat.usuari.nom">{{ authStore.estat.usuari.nom }}</span><span v-else>—</span>)</button>
             </div>
         </footer>
     </div>

@@ -1,10 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\ComandaController;
 use App\Http\Controllers\ReturnToController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\FavoritController;
-use App\Http\Controllers\QueueController;
 use Illuminate\Support\Facades\Route;
 
 // ================================ RUTES API REST (prefix /api) ============
@@ -22,31 +22,12 @@ Route::middleware('auth:sanctum')->group(function () {
 // ——— Events (Ticketmaster) ———
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{id}', [EventController::class, 'show']);
+Route::post('/sync/events', [EventController::class, 'syncEvents']);
 
 // ——— Return-to redirect ———
 Route::post('/return-to/save', [ReturnToController::class, 'save']);
 Route::get('/return-to/get', [ReturnToController::class, 'get']);
 Route::post('/return-to/clear', [ReturnToController::class, 'clear']);
-
-// ——— Cua Virtual (The Gatekeeper) ———
-Route::get('/queue/status/{eventId}', [QueueController::class, 'status']);
-Route::get('/queue/threshold/{eventId}', [QueueController::class, 'getThreshold']);
-
-// Rutes protegides per a la cua
-Route::middleware('auth:sanctum')->group(function () {
-    // ——— Notificacions de cua (des de Laravel) ———
-    Route::post('/queue/user-joined', [QueueController::class, 'userJoined']);
-    Route::post('/queue/user-left', [QueueController::class, 'userLeft']);
-});
-
-// ——— Rutes d'administració de cua (Admin) ———
-Route::middleware(['auth:sanctum', 'rol:admin'])->group(function () {
-    Route::put('/queue/threshold/{eventId}', [QueueController::class, 'updateThreshold']);
-    Route::post('/queue/event/{eventId}/start', [QueueController::class, 'startEvent']);
-    Route::post('/queue/event/{eventId}/end', [QueueController::class, 'endEvent']);
-    Route::post('/queue/panic', [QueueController::class, 'activatePanic']);
-    Route::post('/queue/panic/deactivate', [QueueController::class, 'deactivatePanic']);
-});
 
 // ——— Rutes protegides ———
 Route::middleware('auth:sanctum')->group(function () {
@@ -54,6 +35,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/favorites', [FavoritController::class, 'index']);
     Route::post('/favorites', [FavoritController::class, 'store']);
     Route::delete('/favorites/{eventId}', [FavoritController::class, 'destroy']);
+
+    // ——— Comandes / entrades Ticketmaster (demo) ———
+    Route::post('/comandes', [ComandaController::class, 'store']);
+    Route::get('/meves-entrades', [ComandaController::class, 'mevesEntrades']);
 });
 
 // ——— Rutes exclusives per a administradors ———

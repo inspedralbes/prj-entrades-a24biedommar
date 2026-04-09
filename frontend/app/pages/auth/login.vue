@@ -7,10 +7,19 @@ const error = ref('');
 const loading = ref(false);
 
 const router = useRouter();
+const route = useRoute();
+const cookieReturnToPrefill = useCookie('return_to', { path: '/', maxAge: 60 * 30 });
+
+/** Query ?return_to= des del modal de compra → cookie per al redirect post-login. */
+onMounted(() => {
+    const q = route.query.return_to;
+    if (typeof q === 'string' && q.startsWith('/')) {
+        cookieReturnToPrefill.value = q;
+    }
+});
 
 /**
- * Després del login: return_to segur del backend, cookie o /.
- * Si ja hi ha turn_token vàlid i el destí és la cua, va directe a la landing.
+ * Després del login: return_to segur del backend o /.
  */
 async function handleLogin() {
     error.value = '';
@@ -26,19 +35,18 @@ async function handleLogin() {
 
     try {
         const returnTo = cookieReturnTo.value || '/';
-        const resposta = await authStore.login(correu.value, contrasenya.value, returnTo);
+        await authStore.login(correu.value, contrasenya.value, returnTo);
 
-        let desti = resposta.return_to_resolta || cookieReturnTo.value || '/';
-
-        if (authStore.teTurnTokenDesat() && desti.startsWith('/waiting-room')) {
-            desti = '/';
-        }
-
+        const desti = cookieReturnTo.value || '/';
         cookieReturnTo.value = null;
 
         await router.push(desti);
     } catch (err) {
-        error.value = err.data?.missatge || 'Credencials incorrectes';
+        let msg = 'Credencials incorrectes';
+        if (err && err.data && err.data.missatge) {
+            msg = err.data.missatge;
+        }
+        error.value = msg;
     } finally {
         loading.value = false;
     }

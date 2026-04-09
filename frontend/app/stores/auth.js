@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { reactive, ref, computed } from 'vue';
 
 /**
- * Store d'autenticació i dades de cua (integració Login → Cua → Landing).
+ * Store d'autenticació d'usuaris.
  */
 export const useAuthStore = defineStore('auth', () => {
     const estat = reactive({
@@ -13,14 +13,14 @@ export const useAuthStore = defineStore('auth', () => {
         error: null,
     });
 
+    /** Evita múltiples initAuth al client. */
+    const sessioInicialitzada = ref(false);
+
     /** Token de torn de la cua virtual (sincronitzat amb queueStore quan escau). */
     const cuaTurnToken = ref(null);
 
     /** Posició a la cua (per mostrar o lògica post-login). */
     const cuaPosicio = ref(null);
-
-    /** Evita múltiples initAuth al client. */
-    const sessioInicialitzada = ref(false);
 
     const token = computed(() => estat.token);
 
@@ -86,7 +86,11 @@ export const useAuthStore = defineStore('auth', () => {
 
             return resposta;
         } catch (err) {
-            estat.error = err.data?.missatge || 'Error en el login';
+            let msg = 'Error en el login';
+            if (err && err.data && err.data.missatge) {
+                msg = err.data.missatge;
+            }
+            estat.error = msg;
             throw err;
         } finally {
             estat.carregant = false;
@@ -113,7 +117,11 @@ export const useAuthStore = defineStore('auth', () => {
 
             return resposta;
         } catch (err) {
-            estat.error = err.data?.missatge || 'Error en el registre';
+            let msg = 'Error en el registre';
+            if (err && err.data && err.data.missatge) {
+                msg = err.data.missatge;
+            }
+            estat.error = msg;
             throw err;
         } finally {
             estat.carregant = false;

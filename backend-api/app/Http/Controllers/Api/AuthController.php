@@ -90,7 +90,11 @@ class AuthController extends Controller
         // C. Token Sanctum.
         $nomToken = 'api-auth';
         $token = $usuari->createToken($nomToken)->plainTextToken;
-        $returnToResolta = $this->returnToResolver->resolve($dades['return_to'] ?? null);
+        $returnTo = null;
+        if (array_key_exists('return_to', $dades)) {
+            $returnTo = $dades['return_to'];
+        }
+        $returnToResolta = $this->returnToResolver->resolve($returnTo);
 
         return response()->json([
             'missatge' => 'Sessió iniciada.',
